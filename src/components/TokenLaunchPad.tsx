@@ -47,30 +47,42 @@ const TokenLaunchPad = () => {
 
     const mintLen = getMintLen([ExtensionType.MetadataPointer]);
     const metadataLen = TYPE_SIZE + LENGTH_SIZE + pack(metadata).length;
-    const lamports = await connection.getMinimumBalanceForRentExemption(mintLen + metadataLen);
-    
+    const lamports = await connection.getMinimumBalanceForRentExemption(
+      mintLen + metadataLen
+    );
 
     const transaction = new Transaction().add(
       SystemProgram.createAccount({
-          fromPubkey: publicKey,
-          newAccountPubkey: mintKeyPair.publicKey,
-          space: mintLen,
-          lamports,
-          programId: TOKEN_2022_PROGRAM_ID,
+        fromPubkey: publicKey,
+        newAccountPubkey: mintKeyPair.publicKey,
+        space: mintLen,
+        lamports,
+        programId: TOKEN_2022_PROGRAM_ID,
       }),
-      createInitializeMetadataPointerInstruction(mintKeyPair.publicKey, publicKey, mintKeyPair.publicKey, TOKEN_2022_PROGRAM_ID),
-      createInitializeMintInstruction(mintKeyPair.publicKey, 9, publicKey, null, TOKEN_2022_PROGRAM_ID),
+      createInitializeMetadataPointerInstruction(
+        mintKeyPair.publicKey,
+        publicKey,
+        mintKeyPair.publicKey,
+        TOKEN_2022_PROGRAM_ID
+      ),
+      createInitializeMintInstruction(
+        mintKeyPair.publicKey,
+        decimals,
+        publicKey,
+        null,
+        TOKEN_2022_PROGRAM_ID
+      ),
       createInitializeInstruction({
-          programId: TOKEN_2022_PROGRAM_ID,
-          mint: mintKeyPair.publicKey,
-          metadata: mintKeyPair.publicKey,
-          name: metadata.name,
-          symbol: metadata.symbol,
-          uri: metadata.uri,
-          mintAuthority: publicKey,
-          updateAuthority: publicKey,
-      }),
-  );
+        programId: TOKEN_2022_PROGRAM_ID,
+        mint: mintKeyPair.publicKey,
+        metadata: mintKeyPair.publicKey,
+        name: metadata.name,
+        symbol: metadata.symbol,
+        uri: metadata.uri,
+        mintAuthority: publicKey,
+        updateAuthority: publicKey,
+      })
+    );
 
     transaction.feePayer = publicKey;
     const recentBlockHash = await connection.getLatestBlockhash();
@@ -81,7 +93,7 @@ const TokenLaunchPad = () => {
 
     // get confirmation from the payer in the launchpad and send the transaction onto sol blockchain
     const res = await sendTransaction(transaction, connection);
-    console.log(' res : ', res);
+    console.log(" res : ", res);
   };
   return (
     <div className="border px-2 py-4 flex flex-col gap-y-6 rounded-lg w-full max-w-md">
