@@ -1,16 +1,15 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import {
+  createAssociatedTokenAccountInstruction,
   createInitializeMetadataPointerInstruction,
-  createInitializeMint2Instruction,
   createInitializeMintInstruction,
+  createMintToInstruction,
   ExtensionType,
-  getMinimumBalanceForRentExemptMint,
+  getAssociatedTokenAddressSync,
   getMintLen,
   LENGTH_SIZE,
-  MINT_SIZE,
   TOKEN_2022_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
   TYPE_SIZE,
 } from "@solana/spl-token";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
@@ -25,17 +24,19 @@ const TokenLaunchPad = () => {
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [initialSupply, setInitialSupply] = useState("");
+  const [initialSupply, setInitialSupply] = useState(0);
+  const [mintKeyPair, setMintKeyPair] = useState<Keypair | null>(null);
 
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
-
+  console.log(' mintkey pair : ', mintKeyPair?.secretKey.toString());
   const handleCreateToken = async () => {
     if (!publicKey) {
       toast.error("Wallet not connected");
       return;
     }
     const mintKeyPair = Keypair.generate();
+    setMintKeyPair(mintKeyPair);
     const decimals = 9;
     const metadata: TokenMetadata = {
       mint: mintKeyPair.publicKey,
@@ -95,6 +96,52 @@ const TokenLaunchPad = () => {
     const res = await sendTransaction(transaction, connection);
     console.log(" res : ", res);
   };
+
+  const handleMintToken = async () => {
+    if (!mintKeyPair?.publicKey) {
+      toast.error("No mint account has been created");
+      return;
+    }
+
+    if (!publicKey) {
+      toast.error("Wallet not connected");
+      return;
+    }
+    const ataToken = getAssociatedTokenAddressSync(
+      mintKeyPair?.publicKey,
+      publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID
+    );
+    console.log(' ataToken : ', ataToken);
+    const tx1 = new Transaction().add(
+      createAssociatedTokenAccountInstruction(
+        publicKey,
+        ataToken,
+        publicKey,
+        mintKeyPair.publicKey,
+        TOKEN_2022_PROGRAM_ID
+      )
+    );
+
+    const res1 = await sendTransaction(tx1, connection);
+    console.log(' res1 : ', res1);
+
+    const tx2 = new Transaction().add(
+      createMintToInstruction(
+        mintKeyPair.publicKey,
+        ataToken,
+        publicKey,
+        initialSupply,
+        [],
+        TOKEN_2022_PROGRAM_ID
+      )
+    );
+
+    const res2 = await sendTransaction(tx2, connection);
+    console.log(' res2 : ', res2);
+  };
+
   return (
     <div className="border px-2 py-4 flex flex-col gap-y-6 rounded-lg w-full max-w-md">
       <input
@@ -119,13 +166,19 @@ const TokenLaunchPad = () => {
         type="text"
         className="bg-white bg-opacity-20 p-2"
         placeholder="Initial supply"
-        onChange={(e) => setInitialSupply(e.target.value)}
+        onChange={(e) => setInitialSupply(parseInt(e.target.value, 10))}
       />
       <button
         className="bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg hover:pink-300 p-2"
         onClick={handleCreateToken}
       >
         Create Token
+      </button>
+      <button
+        className="bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg hover:pink-300 p-2"
+        onClick={handleMintToken}
+      >
+        minToken
       </button>
     </div>
   );
