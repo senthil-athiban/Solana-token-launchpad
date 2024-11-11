@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import  { useState } from "react";
 import { toast } from "react-toastify";
 import {
   createAssociatedTokenAccountInstruction,
@@ -17,7 +17,6 @@ import { Keypair, SystemProgram, Transaction } from "@solana/web3.js";
 import {
   createInitializeInstruction,
   pack,
-  TokenMetadata,
 } from "@solana/spl-token-metadata";
 
 const TokenLaunchPad = () => {
@@ -25,13 +24,12 @@ const TokenLaunchPad = () => {
   const [symbol, setSymbol] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [initialSupply, setInitialSupply] = useState(0);
-  const [mintKeyPair, setMintKeyPair] = useState<Keypair | null>(null);
 
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
 
 
-  const mintToken = async () => {
+  const mintToken = async (mintKeyPair) => {
 
     if(!mintKeyPair?.publicKey) {
       toast.error("No mint account has been created");
@@ -82,7 +80,7 @@ const TokenLaunchPad = () => {
       );
   
       // confirm on the user's wallet
-      const res2 = await sendTransaction(tx2, connection);
+      await sendTransaction(tx2, connection);
       toast.success('Tokens minted successfully');
     } catch (error) {
       console.log('Transaction failed : ', error);
@@ -98,11 +96,10 @@ const TokenLaunchPad = () => {
 
     // create a new keypair
     const mintKeyPair = Keypair.generate();
-    setMintKeyPair(mintKeyPair);
     const decimals = 9;
 
     // create token meatadata
-    const metadata: TokenMetadata = {
+    const metadata = {
       mint: mintKeyPair.publicKey,
       name: name,
       symbol: symbol,
@@ -161,37 +158,38 @@ const TokenLaunchPad = () => {
     await sendTransaction(transaction, connection);
 
     // mint some tokens
-    await mintToken();
+    await mintToken(mintKeyPair);
   };
 
   return (
-    <div className="border px-2 py-4 flex flex-col gap-y-6 rounded-lg w-full max-w-md">
+    <div className="border p-4 py-8 flex flex-col gap-y-6 rounded-lg w-full max-w-md">
+      <h2 className="text-lg p-2 bg-gradient-to-r from-purple-400 via-blue-400 to-green-400 text-white font-mono text-center">CREATE TOKEN</h2>
       <input
         type="text"
-        className="bg-white bg-opacity-20 p-2"
+        className="bg-white bg-opacity-20 p-2 placeholder-gray-300 rounded-lg"
         placeholder="Name"
         onChange={(e) => setName(e.target.value)}
       />
       <input
         type="text"
-        className="bg-white bg-opacity-20 p-2"
+        className="bg-white bg-opacity-20 p-2 placeholder-gray-300 rounded-lg"
         placeholder="Symbol"
         onChange={(e) => setSymbol(e.target.value)}
       />
       <input
         type="text"
-        className="bg-white bg-opacity-20 p-2"
+        className="bg-white bg-opacity-20 p-2 placeholder-gray-300 rounded-lg"
         placeholder="Image url"
         onChange={(e) => setImageUrl(e.target.value)}
       />
       <input
         type="text"
-        className="bg-white bg-opacity-20 p-2"
+        className="bg-white bg-opacity-20 p-2 placeholder-gray-300 rounded-lg"
         placeholder="Initial supply"
         onChange={(e) => setInitialSupply(parseInt(e.target.value, 10))}
       />
       <button
-        className="bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg hover:pink-300 p-2"
+        className="bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg hover:pink-300 p-2 text-white"
         onClick={handleCreateToken}
       >
         Create Token
