@@ -29,15 +29,79 @@ const TokenLaunchPad = () => {
 
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
-  console.log(' mintkey pair : ', mintKeyPair?.secretKey.toString());
+
+
+  const mintToken = async () => {
+
+    if(!mintKeyPair?.publicKey) {
+      toast.error("No mint account has been created");
+      return;
+    }
+    if (!publicKey) {
+      toast.error("Wallet not connected");
+      return;
+    }
+    
+    try {
+
+      // get the ata token address
+      const ataToken = getAssociatedTokenAddressSync(
+        mintKeyPair?.publicKey,
+        publicKey,
+        false,
+        TOKEN_2022_PROGRAM_ID
+      );
+
+      // create an instruction for ata account 
+      const tx1 = new Transaction().add(
+        createAssociatedTokenAccountInstruction(
+          publicKey,
+          ataToken,
+          publicKey,
+          mintKeyPair.publicKey,
+          TOKEN_2022_PROGRAM_ID
+        )
+      );
+  
+      // confirm on the user's wallet
+      const response = await sendTransaction(tx1, connection);
+  
+      if(!response?.length) return;
+      toast.success('Associated token account created successfully');
+
+      // minting tokens
+      const tx2 = new Transaction().add(
+        createMintToInstruction(
+          mintKeyPair.publicKey,
+          ataToken,
+          publicKey,
+          100 * initialSupply,
+          [],
+          TOKEN_2022_PROGRAM_ID
+        )
+      );
+  
+      // confirm on the user's wallet
+      const res2 = await sendTransaction(tx2, connection);
+      toast.success('Tokens minted successfully');
+    } catch (error) {
+      console.log('Transaction failed : ', error);
+      toast.error('Transaction failed');
+    }
+  }
+
   const handleCreateToken = async () => {
     if (!publicKey) {
       toast.error("Wallet not connected");
       return;
     }
+
+    // create a new keypair
     const mintKeyPair = Keypair.generate();
     setMintKeyPair(mintKeyPair);
     const decimals = 9;
+
+    // create token meatadata
     const metadata: TokenMetadata = {
       mint: mintKeyPair.publicKey,
       name: name,
@@ -52,6 +116,7 @@ const TokenLaunchPad = () => {
       mintLen + metadataLen
     );
 
+    // create a transaction to create token along with meta data
     const transaction = new Transaction().add(
       SystemProgram.createAccount({
         fromPubkey: publicKey,
@@ -93,53 +158,10 @@ const TokenLaunchPad = () => {
     transaction.partialSign(mintKeyPair);
 
     // get confirmation from the payer in the launchpad and send the transaction onto sol blockchain
-    const res = await sendTransaction(transaction, connection);
-    console.log(" res : ", res);
-  };
+    await sendTransaction(transaction, connection);
 
-  const handleMintToken = async () => {
-    if (!mintKeyPair?.publicKey) {
-      toast.error("No mint account has been created");
-      return;
-    }
-
-    if (!publicKey) {
-      toast.error("Wallet not connected");
-      return;
-    }
-    const ataToken = getAssociatedTokenAddressSync(
-      mintKeyPair?.publicKey,
-      publicKey,
-      false,
-      TOKEN_2022_PROGRAM_ID
-    );
-    console.log(' ataToken : ', ataToken);
-    const tx1 = new Transaction().add(
-      createAssociatedTokenAccountInstruction(
-        publicKey,
-        ataToken,
-        publicKey,
-        mintKeyPair.publicKey,
-        TOKEN_2022_PROGRAM_ID
-      )
-    );
-
-    const res1 = await sendTransaction(tx1, connection);
-    console.log(' res1 : ', res1);
-
-    const tx2 = new Transaction().add(
-      createMintToInstruction(
-        mintKeyPair.publicKey,
-        ataToken,
-        publicKey,
-        initialSupply,
-        [],
-        TOKEN_2022_PROGRAM_ID
-      )
-    );
-
-    const res2 = await sendTransaction(tx2, connection);
-    console.log(' res2 : ', res2);
+    // mint some tokens
+    await mintToken();
   };
 
   return (
@@ -173,12 +195,6 @@ const TokenLaunchPad = () => {
         onClick={handleCreateToken}
       >
         Create Token
-      </button>
-      <button
-        className="bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg hover:pink-300 p-2"
-        onClick={handleMintToken}
-      >
-        minToken
       </button>
     </div>
   );
