@@ -1,9 +1,48 @@
-# React + Vite
+# Token Launchpad
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Token Launchpad is a web application that allows users to create and manage tokens on the Solana blockchain. The application uses the Solana Wallet Adapter for wallet integration and Tailwind CSS for styling.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-# Solana-token-launchpad
+- Connect to Solana wallet
+- Create new tokens with metadata
+- Mint tokens to associated token accounts
+
+## Technologies Used
+
+- React
+- Solana Wallet Adapter
+- Solana Web3.js
+- Solana SPL Token
+- Tailwind CSS
+- Vite
+- ESLint
+- PostCSS
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v14 or higher)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+
+   ```sh
+   git clone https://github.com/your-username/token-launchpad.git
+   cd token-launchpad
+   ```
+
+2. Install dependencies:
+
+   ```sh
+   npm install
+   ```
+
+3. Running the Application
+
+   ```sh
+   npm run dev
+   ```
